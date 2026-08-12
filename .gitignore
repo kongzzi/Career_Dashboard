@@ -24,5 +24,5 @@ __pycache__/
 .idea/
 *.swp
 
-# Claude Code 로컬 설정 (launch.json 은 공유하므로 남긴다)
-.claude/settings.local.json
+# Claude Code 설정 — 이 저장소를 쓰는 사람에게는 의미가 없다
+.claude/

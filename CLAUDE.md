@@ -77,7 +77,8 @@ data/career.xlsx    원본 데이터 (사용자의 실데이터)
 python3 run.py
 ```
 
-`.claude/launch.json`에 `career-dashboard` 설정이 있어 preview 도구로도 띄운다(포트 8765).
+포트는 8765부터 비어 있는 것을 찾아 쓴다. `--no-browser` 로 브라우저 열기를 건너뛴다.
+(`.claude/` 는 저장소에 없다 — 각자의 로컬 설정이다.)
 
 **자동 리로드는 꺼져 있다**(2026-08-12에 제거 — 배포용). 그래서:
 
