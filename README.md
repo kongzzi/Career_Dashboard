@@ -227,5 +227,8 @@ data/career.xlsx        데이터 원본
 
 ## 기록
 
-- [docs/작업기록.md](docs/작업기록.md) — 무엇을 왜 그렇게 정했는지
 - [CLAUDE.md](CLAUDE.md) — AI 어시스턴트용 프로젝트 안내
+
+## 라이선스
+
+[MIT](LICENSE)
