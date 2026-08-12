@@ -1,0 +1,13 @@
+# 커리어 대시보드 실행에 필요한 것 전부.
+#
+#     python3 -m pip install -r requirements.txt
+#
+# 프런트엔드는 빌드도 의존성도 없다 — 순수 ES 모듈과 손으로 그린 SVG뿐이라
+# npm 이나 CDN 이 끼어들지 않는다(오프라인 동작 조건).
+#
+# 아래 하한선은 실제로 돌려서 확인한 값 기준이다.
+# 검증에 쓴 조합: Python 3.11.12 / fastapi 0.141.1 / uvicorn 0.52.1 / openpyxl 3.1.5
+
+fastapi>=0.110
+uvicorn>=0.29
+openpyxl>=3.1
