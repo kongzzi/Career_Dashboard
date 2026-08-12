@@ -8,6 +8,8 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -456,6 +458,50 @@ class CrossLanguageConstants(unittest.TestCase):
         self.assertIsNotNone(block, "test_core.mjs 에서 TAX_TYPE_RATE 사본을 찾지 못했다")
         keys = set(re.findall(r"'([^']+)':", block.group(1)))
         self.assertEqual(keys, set(TAX_TYPE_RATE))
+
+
+# ─────────────────────────────────────────────────────────── 데이터 경로 바꾸기
+
+class DataPathOverride(unittest.TestCase):
+    """`--data` / `CAREER_XLSX` 로 다른 엑셀 파일을 쓸 수 있다 (데모·동기화 폴더용).
+
+    경로는 **store 를 불러오는 시점에 굳는다** — 함수 기본 인자가 그때 묶이기 때문이다.
+    그래서 환경변수를 나중에 세우면 조용히 기본 경로를 쓰고, 아무 에러도 안 난다.
+    하위 프로세스를 띄워 실제 import 순서로 확인한다.
+    """
+
+    def _paths(self, env_value):
+        env = {k: v for k, v in os.environ.items() if k != "CAREER_XLSX"}
+        if env_value:
+            env["CAREER_XLSX"] = env_value
+        code = (
+            "import sys; sys.path.insert(0, %r); import store;"
+            "print(store.XLSX_PATH); print(store.DATA_DIR); print(store.BACKUP_DIR)"
+            % str(ROOT / "server")
+        )
+        out = subprocess.run([sys.executable, "-c", code], env=env,
+                             capture_output=True, text=True, check=True)
+        return out.stdout.strip().splitlines()
+
+    def test_환경변수가_경로와_백업위치를_함께_바꾼다(self):
+        xlsx, data_dir, backups = self._paths("/tmp/career-demo/career.xlsx")
+        self.assertEqual(xlsx, "/tmp/career-demo/career.xlsx")
+        self.assertEqual(data_dir, "/tmp/career-demo")
+        self.assertEqual(backups, "/tmp/career-demo/backups")   # 백업은 원본 옆으로
+
+    def test_환경변수가_없으면_기본_경로(self):
+        xlsx, _, backups = self._paths(None)
+        self.assertEqual(xlsx, str(ROOT / "data" / "career.xlsx"))
+        self.assertEqual(backups, str(ROOT / "data" / "backups"))
+
+    def test_data_인자_파싱(self):
+        sys.path.insert(0, str(ROOT))
+        import run
+        self.assertEqual(run.data_arg(["run.py", "--data", "a.xlsx"]), "a.xlsx")
+        self.assertEqual(run.data_arg(["run.py", "--data=b.xlsx"]), "b.xlsx")
+        self.assertEqual(run.data_arg(["run.py", "--no-browser", "--data", "c.xlsx"]), "c.xlsx")
+        self.assertIsNone(run.data_arg(["run.py", "--no-browser"]))
+        self.assertIsNone(run.data_arg(["run.py", "--data"]))    # 값이 빠졌으면 무시
 
 
 # ─────────────────────────────────────────────────────────── 실데이터 안전망

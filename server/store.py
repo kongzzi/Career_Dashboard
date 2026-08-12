@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
 import re
 import shutil
 import threading
@@ -33,8 +34,12 @@ from schema import (
 )
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = ROOT / "data"
-XLSX_PATH = DATA_DIR / "career.xlsx"
+
+# 데이터 파일 위치. 기본은 data/career.xlsx 이고 CAREER_XLSX 로 바꿀 수 있다
+# (run.py --data). 데모 데이터로 스크린샷을 찍거나, 실데이터를 동기화 폴더에
+# 둘 때 쓴다. 백업은 언제나 이 파일 옆의 backups/ 로 간다.
+XLSX_PATH = Path(os.environ.get("CAREER_XLSX") or ROOT / "data" / "career.xlsx").expanduser()
+DATA_DIR = XLSX_PATH.parent
 BACKUP_DIR = DATA_DIR / "backups"
 MAX_BACKUPS = 10
 

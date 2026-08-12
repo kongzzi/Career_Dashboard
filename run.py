@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import socket
 import sys
 import threading
@@ -37,6 +38,19 @@ def find_port(start: int) -> int:
 REQUIRED = ("fastapi", "uvicorn", "openpyxl")
 
 
+def data_arg(argv: list[str]) -> str | None:
+    """--data <경로> / --data=<경로> — 다른 엑셀 파일로 띄운다.
+
+    데모 데이터로 스크린샷을 찍거나, 실데이터를 동기화 폴더에 둘 때 쓴다.
+    """
+    for i, a in enumerate(argv):
+        if a == "--data" and i + 1 < len(argv):
+            return argv[i + 1]
+        if a.startswith("--data="):
+            return a.split("=", 1)[1]
+    return None
+
+
 def main() -> None:
     # 클론 직후 첫 실행에서 가장 흔한 실패라, 세 개를 한 번에 알려 준다
     # (하나씩 트레이스백으로 마주치게 하지 않는다).
@@ -47,6 +61,11 @@ def main() -> None:
             "아래 명령으로 설치해 주세요:\n"
             "    python3 -m pip install -r requirements.txt"
         )
+
+    # store 를 불러오기 전에 정해야 한다 — 모듈을 읽는 시점에 경로가 굳는다
+    chosen = data_arg(sys.argv)
+    if chosen:
+        os.environ["CAREER_XLSX"] = str(Path(chosen).expanduser())
 
     import store
 

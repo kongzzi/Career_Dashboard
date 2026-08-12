@@ -27,6 +27,7 @@ server/app.py       FastAPI — 127.0.0.1 전용
 web/js/core.js      ★ 상태 + 파생 계산(derive). 금액·일정 로직의 심장
 web/js/charts.js    손으로 그린 SVG 차트 (외부 라이브러리 없음)
 web/js/{dashboard,schedule,records,settings}.js   화면별 렌더러
+tools/demo_data.py  데모 데이터 생성기 (스크린샷·첫 사용자용 가짜 데이터)
 data/career.xlsx    원본 데이터 (사용자의 실데이터)
 ```
 
@@ -80,6 +81,17 @@ python3 run.py
 포트는 8765부터 비어 있는 것을 찾아 쓴다. `--no-browser` 로 브라우저 열기를 건너뛴다.
 (`.claude/` 는 저장소에 없다 — 각자의 로컬 설정이다.)
 
+**실데이터를 건드리지 않고 화면을 확인하려면 데모를 쓴다:**
+
+```bash
+python3 tools/demo_data.py                 # demo/career.xlsx 생성
+python3 run.py --data demo/career.xlsx     # 그 파일로 띄우기
+```
+
+`--data`(또는 환경변수 `CAREER_XLSX`)로 데이터 파일을 바꾼다. **경로는 `store` 를 불러오는
+시점에 굳으므로** run.py 에서 `import store` 보다 먼저 정해야 한다. 백업은 그 파일 옆으로 간다.
+스크린샷·시연은 반드시 데모로 — 실화면에는 기관명과 급여가 그대로 떠 있다.
+
 **자동 리로드는 꺼져 있다**(2026-08-12에 제거 — 배포용). 그래서:
 
 - **서버 코드(`server/*.py`)를 고치면 반드시 재시작한다.** 특히 스키마를 고치고 재시작을
@@ -91,7 +103,7 @@ python3 run.py
 ## 테스트
 
 ```bash
-./run_tests.sh          # 파이썬 48 + 자바스크립트 44
+./run_tests.sh          # 파이썬 51 + 자바스크립트 44
 ```
 
 `tests/test_store.py`(unittest) · `tests/test_core.mjs`(node --test). 추가 설치 없음.
@@ -113,7 +125,7 @@ python3 run.py
 
 ### 배포 전 채워야 할 구멍
 
-2026-08-12에 **기반 정리를 마쳤다** — git 저장소, `requirements.txt`, 회귀 테스트 92개.
+2026-08-12에 **기반 정리를 마쳤다** — git 저장소, `requirements.txt`, 회귀 테스트 95개.
 아직 남은 것:
 
 - **`server/app.py`가 `sys.path` 조작으로 `import store` 한다** — 클론해서 `python3 run.py` 로
