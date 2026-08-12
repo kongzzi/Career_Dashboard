@@ -12,12 +12,12 @@
   차트까지 직접 그려서 인터넷 없이 돕니다.
 - 계정도, 구독도, 클라우드도 없습니다.
 
-<!-- 스크린샷을 넣으려면 docs/img/ 에 파일을 두고 아래 두 줄의 주석을 푸세요.
-     찍기 전에 반드시 데모 데이터로 띄우세요(아래 "데모로 먼저 보기") —
-     실제 기관명과 금액이 이미지에 그대로 박힙니다.
-![대시보드](docs/img/dashboard.png)
-![월간 캘린더](docs/img/calendar.png)
--->
+![대시보드 — 연간·이번 달 수입, 받을 돈, 월별 추이, 다가오는 일정](docs/img/dashboard.png)
+
+![월간 캘린더 — 날짜별 수업이 분반별로 표시됩니다](docs/img/calendar.png)
+
+<sub>화면에 보이는 기관명과 금액은 전부 데모 데이터입니다. 아래 <b>데모로 먼저 보기</b> 참고.</sub>
+
 
 ## 왜 만들었나
 
@@ -51,8 +51,8 @@
 **Python 3.9 이상**이 필요합니다 (3.11.12에서 검증).
 
 ```bash
-git clone https://github.com/<사용자명>/<저장소명>.git
-cd <저장소명>
+git clone https://github.com/kongzzi/Career_Dashboard.git
+cd Career_Dashboard
 python3 -m pip install -r requirements.txt
 ```
 
