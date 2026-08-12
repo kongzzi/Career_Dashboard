@@ -73,7 +73,12 @@ python3 run.py
 ```
 
 `.claude/launch.json`에 `career-dashboard` 설정이 있어 preview 도구로도 띄운다(포트 8765).
-**스키마(.py)를 고치면 서버를 재시작해야 한다** — 안 하면 옛 코드가 새 엑셀을 잘못 읽는다.
+
+**자동 리로드는 꺼져 있다**(2026-08-12에 제거 — 배포용). 그래서:
+
+- **서버 코드(`server/*.py`)를 고치면 반드시 재시작한다.** 특히 스키마를 고치고 재시작을
+  안 하면 옛 코드가 새 엑셀을 잘못 읽는다.
+- 웹 파일(`web/`)은 `no-store` 헤더라 브라우저 새로고침만 하면 된다.
 
 의존성은 `requirements.txt` (fastapi, uvicorn, openpyxl). 프런트엔드는 빌드 없음.
 
@@ -105,10 +110,8 @@ python3 run.py
 2026-08-12에 **기반 정리를 마쳤다** — git 저장소, `requirements.txt`, 회귀 테스트 92개.
 아직 남은 것:
 
-- **`run.py`에 `reload=True`가 켜져 있다** — 개발용. 어느 배포로 가든 끄는 판단이 필요하다.
-  (`--no-browser` 처럼 플래그로 가를지, 그냥 끌지)
-- **`server/app.py`가 `sys.path` 조작으로 `import store` 한다** — 패키징(.app/PyInstaller)으로
-  가면 여기가 첫 걸림돌이다. 패키지 상대 임포트로 바꿔야 할 수 있다.
+- **`server/app.py`가 `sys.path` 조작으로 `import store` 한다** — 클론해서 `python3 run.py` 로
+  쓰는 데는 문제가 없지만, 패키징(.app/PyInstaller)으로 가면 여기가 첫 걸림돌이다.
 - **화면 코드에는 테스트가 없다** — `records.js` 등 렌더러는 DOM이 필요해 손으로 확인한다.
   계산은 `core.js`에 모여 있어 테스트가 덮고 있으므로, 지금 구조에서는 이 정도가 균형점이다.
 - 남에게 배포한다면: 라이선스, 설치 안내, 스크린샷, 초기 데이터 분리(`data/`는 이미 gitignore).
