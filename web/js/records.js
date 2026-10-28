@@ -11,6 +11,9 @@ const STATUS_COLOR = {
 const SETTLE_COLOR = { '미청구': 'var(--warning)', '청구': 'var(--s1)', '입금완료': 'var(--good)' };
 
 const filters = { q: '', category: '', status: '', settle: '', sort: 'start_desc' };
+// 골라 담은 일감 id — 화면에서만 쓰고 엑셀에는 저장하지 않는다.
+// 필터를 바꿔도 유지돼야 "A 조건으로 몇 개, B 조건으로 몇 개" 식으로 모을 수 있다.
+const picked = new Set();
 
 function pill(text, color) {
   return el('span', { class: 'pill' }, [el('i', { class: 'dot', style: `background:${color}` }), text || '—']);
@@ -46,6 +49,8 @@ export function renderRecords(root, { openRecord, onNew }) {
   root.append(wrap);
   const summary = el('div', { class: 'card-sub', style: 'margin-top:10px' });
   root.append(summary);
+  const pickBar = el('div', { class: 'pick-bar', hidden: true });
+  root.append(pickBar);
   refreshBody();
 
   function refreshBody() {
@@ -73,13 +78,30 @@ export function renderRecords(root, { openRecord, onNew }) {
         el('p', { text: state.records.length ? '필터를 바꿔 보세요.' : '+ 새 일감 버튼으로 첫 건을 등록하세요.' }),
       ]));
       summary.textContent = '';
+      drawPickBar();
       return;
     }
 
     const table = el('table', { class: 'data' }, [
       el('thead', {}, [el('tr', {}, [
-        '상태', '일정', '기관', '과정명', '구분', '대상', '시수', '단가', '총액(세전)', '입금 예상 / 실제', '정산',
-      ].map((h) => el('th', { text: h, class: ['시수', '단가', '총액(세전)', '입금 예상 / 실제'].includes(h) ? 'num' : '' })))]),
+        el('th', { class: 'pick-col' }, [el('input', {
+          type: 'checkbox', title: '보이는 일감 전체 선택',
+          checked: rows.every((r) => picked.has(r.id)) || null,
+          onclick: (ev) => {
+            ev.stopPropagation();
+            const on = ev.target.checked;
+            rows.forEach((r) => (on ? picked.add(r.id) : picked.delete(r.id)));
+            wrap.querySelectorAll('tbody tr').forEach((tr, i) => {
+              const box = tr.querySelector('.pick-col input');
+              if (box) box.checked = on;
+              tr.classList.toggle('is-picked', picked.has(rows[i].id));
+            });
+            drawPickBar();
+          },
+        })]),
+        ...['상태', '일정', '기관', '과정명', '구분', '대상', '시수', '단가', '총액(세전)', '입금 예상 / 실제', '정산']
+          .map((h) => el('th', { text: h, class: ['시수', '단가', '총액(세전)', '입금 예상 / 실제'].includes(h) ? 'num' : '' })),
+      ])]),
       el('tbody', {}, rows.map((r) => {
         const d = dv(r);
         // 개별 날짜만 적은 건도 기간이 보이도록 파생값을 쓴다
@@ -87,7 +109,16 @@ export function renderRecords(root, { openRecord, onNew }) {
         const e = d.end ? iso(d.end) : '';
         const period = (e && e !== s ? `${s.slice(2)} ~ ${e.slice(5)}` : s.slice(2))
           + (d.occ.length > 1 ? ` (${d.occ.length}회)` : '');
-        return el('tr', { onclick: () => openRecord(r) }, [
+        return el('tr', { class: picked.has(r.id) ? 'is-picked' : '', onclick: () => openRecord(r) }, [
+          el('td', { class: 'pick-col', onclick: (ev) => ev.stopPropagation() }, [el('input', {
+            type: 'checkbox', checked: picked.has(r.id) || null,
+            onchange: (ev) => {
+              ev.target.checked ? picked.add(r.id) : picked.delete(r.id);
+              ev.target.closest('tr').classList.toggle('is-picked', picked.has(r.id));
+              syncPickAll();
+              drawPickBar();
+            },
+          })]),
           el('td', {}, [pill(r.status, STATUS_COLOR[r.status] || 'var(--muted)')]),
           el('td', { text: period || '—' }),
           // 대행사를 거친 건은 "기관 ↖ 발주처"로 두 줄 표시
@@ -130,6 +161,7 @@ export function renderRecords(root, { openRecord, onNew }) {
       })),
     ]);
     wrap.replaceChildren(table);
+    syncPickAll();
 
     const counted = rows.filter((r) => MONEY_STATUS.includes(r.status));
     const g = counted.reduce((s, r) => s + dv(r).gross, 0);
@@ -148,6 +180,60 @@ export function renderRecords(root, { openRecord, onNew }) {
       + (withActual.length
         ? ` · 실입금 기록 ${withActual.length}건 (예상 대비 ${vsum >= 0 ? '+' : '−'}${won(Math.abs(vsum))}원)`
         : '');
+    drawPickBar();
+  }
+
+  /** 보이는 행이 전부 선택됐는지에 맞춰 헤더 체크박스를 갱신 */
+  function syncPickAll() {
+    const boxes = [...wrap.querySelectorAll('tbody .pick-col input')];
+    const head = wrap.querySelector('thead .pick-col input');
+    if (!head || !boxes.length) return;
+    const on = boxes.filter((b) => b.checked).length;
+    head.checked = on === boxes.length;
+    head.indeterminate = on > 0 && on < boxes.length;
+  }
+
+  /** 골라 담은 일감의 합계. 목록 하단 요약과 같은 계산(dv)을 쓴다. */
+  function drawPickBar() {
+    const sel = state.records.filter((r) => picked.has(r.id));
+    pickBar.hidden = sel.length === 0;
+    if (!sel.length) return;
+
+    const money = sel.filter((r) => MONEY_STATUS.includes(r.status));
+    const skipped = sel.length - money.length;
+    const sum = (f) => money.reduce((a, r) => a + f(dv(r)), 0);
+    const gross = sum((d) => d.gross);
+    const expected = sum((d) => d.expected);
+    const received = sum((d) => d.received);
+    const take = sum((d) => d.takeHome);
+    const hours = sum((d) => d.hours);
+    const withActual = money.filter((r) => dv(r).hasActual).length;
+
+    const item = (k, v, note) => el('div', { class: 'pick-item' }, [
+      el('span', { class: 'k', text: k }),
+      el('span', { class: 'v', text: v }),
+      note ? el('span', { class: 'k', text: note }) : null,
+    ]);
+
+    pickBar.replaceChildren(
+      el('div', { class: 'pick-head' }, [
+        el('strong', { text: `선택 ${sel.length}건` }),
+        skipped ? el('span', { class: 'card-sub', text: `· 집계 제외 ${skipped}건 (문의·취소)` }) : null,
+        // 대시보드는 연도별로 쪼개 보여주지만 여기는 계약 전체다 — 헷갈리지 않게 못 박는다
+        el('span', { class: 'card-sub', text: '· 계약 전체 기준 (연도 배분 아님)' }),
+        el('span', { style: 'flex:1' }),
+        el('button', { class: 'btn btn-sm', text: '선택 해제', onclick: () => { picked.clear(); refreshBody(); } }),
+      ]),
+      el('div', { class: 'pick-items' }, [
+        item('세전 합계', won(gross) + '원'),
+        item('입금 예상', won(expected) + '원'),
+        item('실제 입금', won(received) + '원',
+          withActual ? `${withActual}건 기록` : '전부 추정'),
+        item('실수령 예상', won(take) + '원'),
+        item('시수', hours ? hours.toFixed(hours % 1 ? 1 : 0) + '시간' : '—',
+          hours ? `실효 ${won(take / hours)}원/시간` : null),
+      ]),
+    );
   }
 
   function rerender() { document.dispatchEvent(new CustomEvent('rerender')); }
