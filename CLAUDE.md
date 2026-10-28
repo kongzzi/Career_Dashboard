@@ -28,6 +28,8 @@ web/js/core.js      ★ 상태 + 파생 계산(derive). 금액·일정 로직의
 web/js/charts.js    손으로 그린 SVG 차트 (외부 라이브러리 없음)
 web/js/{dashboard,schedule,records,settings}.js   화면별 렌더러
 tools/demo_data.py  데모 데이터 생성기 (스크린샷·첫 사용자용 가짜 데이터)
+tools/launch_mac.sh 맥 런처 — 떠 있으면 브라우저만 열고, 없으면 띄운다 (--stop 으로 내림)
+tools/make_mac_app.sh 데스크톱 아이콘(.app) 빌더 — stay-open 애플릿이라 앱 종료 = 서버 종료
 data/career.xlsx    원본 데이터 (사용자의 실데이터)
 ```
 
